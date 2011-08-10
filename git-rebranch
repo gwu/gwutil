@@ -1,0 +1,81 @@
+#!/usr/bin/env perl
+
+use strict;
+
+unless (@ARGV) {
+  print <<'__HERE__';
+Usage:
+  git-rebranch <branch-1> <branch-2> ... <branch-n> <newbase>
+
+Rebranch assumes that branch-1 through branch-n are all on the same path.
+That is, every branch-i for i in [1,n) can be fast-forward merged to branch-n.
+After the rebranch, it will be as if branch-n was rebased onto newbase, and
+every branch-i will be brought along for the ride.
+
+For example, suppose I have the following commit tree:
+
+* master
+| * A
+| * B
+| * C
+|/
+* D
+
+And I want to rebase A onto master, but I want B and C to come along for the
+ride, like this:
+
+* A
+* B
+* C
+* master
+* D
+
+Run the following to do this:
+
+git-rebranch C B A master
+__HERE__
+  exit 1;
+}
+
+# Determine the rebase target.
+my $newbase = pop(@ARGV);
+
+# Runs a shell command.
+sub run {
+  my ($command) = @_;
+  print "Running command: $command\n";
+  my $output = `$command`;
+  if (${^CHILD_ERROR_NATIVE}) {
+    print "Error running command: $command\n" . $output;
+    print "Please fix the errors and hit <Enter> to continue.";
+    my $continue = <STDIN>;
+  }
+  return $output;
+}
+
+# Find the common ancestor commit.
+my $mergebase = `git merge-base $newbase $ARGV[$#ARGV]`;
+chomp $mergebase;
+
+# Create temporary branches.
+run("git checkout $mergebase");
+run("git checkout -b rebranch-base");
+run("git branch rebranch-tip");
+run("git checkout $newbase");
+run("git branch rebranch-target");
+
+foreach my $branch (@ARGV) {
+  run("git checkout rebranch-tip");
+  run("git merge --ff-only $branch");
+  run("git rebase --onto rebranch-target rebranch-base $branch");
+  run("git checkout rebranch-target");
+  run("git merge --ff-only $branch");
+  run("git checkout rebranch-base");
+  run("git merge --ff-only rebranch-tip");
+}
+run("git checkout $ARGV[$#ARGV]");
+
+# Delete temporary brances.
+run("git branch -D rebranch-base");
+run("git branch -D rebranch-tip");
+run("git branch -D rebranch-target");
