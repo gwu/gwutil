@@ -5,12 +5,12 @@ use strict;
 unless (@ARGV) {
   print <<'__HERE__';
 Usage:
-  git-rebranch <branch-1> <branch-2> ... <branch-n> <newbase>
+  git-rebranch <branch-0> <branch-1> <branch-2> ... <branch-n> <newbase>
 
-Rebranch assumes that branch-1 through branch-n are all on the same path.
-That is, every branch-i for i in [1,n) can be fast-forward merged to branch-n.
-After the rebranch, it will be as if branch-n was rebased onto newbase, and
-every branch-i will be brought along for the ride.
+Rebranch assumes that branch-0 through branch-n are all on the same path.
+That is, every branch-i for i in [0,n) can be fast-forward merged to branch-n.
+After the rebranch, it will be as if branch-1 through branch-n was rebased onto newbase,
+and every branch-i in between will be brought along for the ride.
 
 For example, suppose I have the following commit tree:
 
@@ -32,7 +32,7 @@ ride, like this:
 
 Run the following to do this:
 
-git-rebranch C B A master
+git-rebranch D C B A master
 __HERE__
   exit 1;
 }
@@ -54,8 +54,7 @@ sub run {
 }
 
 # Find the common ancestor commit.
-my $mergebase = `git merge-base $newbase $ARGV[$#ARGV]`;
-chomp $mergebase;
+my $mergebase = shift(@ARGV);
 
 # Create temporary branches.
 run("git checkout $mergebase");
