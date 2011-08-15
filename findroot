@@ -1,0 +1,26 @@
+#!/bin/bash
+#
+# Find the parent directory that contains a file.
+#
+# For example, to find the root of a maven project, you need to find the directory
+# that contains a file named 'pom.xml'.  From somewhere within the project, you can use
+#
+# $ cd `findroot pom.xml`
+#
+# To change to the root directory of your maven project.
+
+if [ "0" == "$#" ]; then
+  echo "Usage: findroot <filename>"
+fi
+
+findfile="$1"
+
+while [ ! -e $findfile ]; do
+  if [ "/" == `pwd` ]; then
+    # Couldn't find the root.
+    exit 1
+  fi
+  cd ..
+done
+
+echo `pwd`

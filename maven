@@ -1,0 +1,9 @@
+#!/bin/bash
+#
+# Runs the 'mvn' command from the closest project root in your path.
+#
+# This allows you to run 'mvn compile' from anywhere in your maven project, rather than
+# having to be at the root where the pom.xml lives.
+
+cd `findroot pom.xml`
+mvn "$@"
